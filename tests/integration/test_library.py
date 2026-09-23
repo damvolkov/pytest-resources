@@ -50,3 +50,18 @@ def test_default_loader_table_is_open_ended() -> None:
     table = pr.default_loaders()
     assert callable(table[pr.FileType.JSON])
     assert table[pr.FileType.BINARY](b"\x00\x01") == b"\x00\x01"
+
+
+def test_extraction_toolbox_over_the_fixture(resources: pr.Resources) -> None:
+    # recursive: every .json under structured, including nested/deep
+    assert {p.name for p in resources.structured.walk("*.json")} == {"sample.json", "sample2.json", "deep.json"}
+    # values by kind within a folder
+    assert resources.structured.select("*.json")  # decoded dicts
+    # paths unlock the raw file for a caller that wants bytes/text, not a decoded value
+    assert resources.data.paths("*.csv")[0].read_text().startswith("title,year")
+    assert resources.config.paths("*.toml")[0].name == "settings.toml"
+    # fuzzy stem lookup
+    assert all(isinstance(v, str) for v in resources.unstructured.similar("sample"))
+    # random pick is always a real member of the selection
+    chosen = resources.structured.choice("*.json")
+    assert chosen in resources.structured.select("*.json")

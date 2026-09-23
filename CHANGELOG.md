@@ -11,6 +11,12 @@ adheres to [Semantic Versioning](https://semver.org/).
 - `ResourceNode.select(*globs_or_regex, kind=...)`: filter a folder's files by name
   (glob, or a compiled regex searched with `.search`) and/or canonical `FileType`;
   returns the decoded values. `values()` now delegates to it.
+- `ResourceNode.paths(...)`: the same filter, returning the file `Path`s (raw bytes,
+  `open()`, or handing a fixture file to another library).
+- `ResourceNode.walk(...)`: depth-first, lazy, recursive file `Path`s across a subtree,
+  with the same glob / regex / `kind` filters.
+- `ResourceNode.similar(term, kind=..., n=..., cutoff=...)`: values whose file *stem* is
+  lexically close to `term` (`difflib.get_close_matches`), best first — a fuzzy lookup.
 - `ResourceNode.choice(*globs_or_regex, kind=..., rng=...)`: a random file value, using the
   session-seeded global `random` by default (so `pytest-randomly` keeps it reproducible) or
   a caller-supplied `random.Random`.

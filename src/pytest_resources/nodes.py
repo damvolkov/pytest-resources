@@ -15,11 +15,28 @@ from pytest_resources.loaders import _raw
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
+    from re import Pattern
     from typing import Any
 
     from pytest_resources.loaders import Loader
 
 _MISSING = object()
+
+##### PRIVATE #####
+
+
+def _matcher(pattern: str | Pattern[str]) -> Pattern[str]:
+    """A glob string becomes an anchored regex over the name; a compiled pattern is taken as-is."""
+    return pattern if isinstance(pattern, re.Pattern) else re.compile(fnmatch.translate(pattern))
+
+
+def _accept(path: Path, kind: FileType | None, matchers: tuple[Pattern[str], ...]) -> bool:
+    """A file passes when its canonical kind matches and any matcher hits its name."""
+    right_kind = kind is None or FileType.of_path(path) is kind
+    return right_kind and (not matchers or any(m.search(path.name) for m in matchers))
+
+
+############################################################
 
 
 class _Context:
@@ -66,16 +83,16 @@ class ResourceNode:
         hint = difflib.get_close_matches(name, self._entries, n=1)
         return f"{self._path.name!r} has no entry {name!r}" + (f" — did you mean {hint[0]!r}?" if hint else "")
 
-    def _select_paths(self, patterns: tuple[str | re.Pattern[str], ...], kind: FileType | None) -> list[Path]:
-        ### A string pattern is a glob over the file name; a compiled one is regex-searched.
-        matchers = tuple(m if isinstance(m, re.Pattern) else re.compile(fnmatch.translate(m)) for m in patterns)
-        return [
-            file
-            for file in self._entries.values()
-            if isinstance(file, Path)
-            and (kind is None or FileType.of_path(file) is kind)
-            and (not matchers or any(matcher.search(file.name) for matcher in matchers))
-        ]
+    def _files(self, patterns: tuple[str | Pattern[str], ...], kind: FileType | None) -> list[Path]:
+        matchers = tuple(map(_matcher, patterns))
+        return [file for file in self._entries.values() if isinstance(file, Path) and _accept(file, kind, matchers)]
+
+    def _walk(self, matchers: tuple[Pattern[str], ...], kind: FileType | None) -> Iterator[Path]:
+        for entry in self._entries.values():
+            if isinstance(entry, ResourceNode):
+                yield from entry._walk(matchers, kind)
+            if isinstance(entry, Path) and _accept(entry, kind, matchers):
+                yield entry
 
     ############################################################
 
@@ -98,13 +115,29 @@ class ResourceNode:
         """``(name, resolved)`` pairs: files parsed, directories as nodes."""
         return [(name, self._value(entry)) for name, entry in self._entries.items()]
 
-    def select(self, *patterns: str | re.Pattern[str], kind: FileType | None = None) -> list[Any]:
+    def select(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> list[Any]:
         """Decoded values of files in this folder, narrowed by glob/regex and optional kind."""
-        return [self._context.load(file) for file in self._select_paths(patterns, kind)]
+        return [self._context.load(file) for file in self._files(patterns, kind)]
+
+    def paths(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> list[Path]:
+        """Paths of files in this folder under the same filters — for raw bytes or ``open()``."""
+        return self._files(patterns, kind)
+
+    def walk(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> Iterator[Path]:
+        """Depth-first Paths of every file in this subtree passing the filters, lazily."""
+        return self._walk(tuple(map(_matcher, patterns)), kind)
+
+    def similar(self, term: str, kind: FileType | None = None, *, n: int = 3, cutoff: float = 0.6) -> list[Any]:
+        """Decoded values whose file stem is lexically close to ``term`` (best first)."""
+        by_stem: dict[str, list[Path]] = {}
+        for file in self._files((), kind):
+            by_stem.setdefault(file.stem, []).append(file)
+        hits = difflib.get_close_matches(term, by_stem, n=n, cutoff=cutoff)
+        return [self._context.load(file) for stem in hits for file in by_stem[stem]]
 
     def choice(
         self,
-        *patterns: str | re.Pattern[str],
+        *patterns: str | Pattern[str],
         kind: FileType | None = None,
         rng: random.Random | None = None,
     ) -> Any:

@@ -92,6 +92,29 @@ def test_choice_rejects_empty_selection(tree_root: Path) -> None:
         build_resources(tree_root).structured.choice("*.toml")
 
 
+def test_paths_and_walk_return_file_paths(tree_root: Path) -> None:
+    tree = build_resources(tree_root)
+    structured = tree.structured
+    assert {p.name for p in structured.paths("*.json")} == {"sample.json", "weird-name.json"}
+    assert all(p.is_file() for p in structured.paths())
+    assert structured.paths("*.bin", kind=FileType.BINARY) == []  # no .bin in this folder
+    assert tree.binary.paths("raw.bin")[0].read_bytes() == b"\x00\x01"  # paths unlock raw bytes
+
+
+def test_walk_is_recursive_and_filtered(tree_root: Path) -> None:
+    tree = build_resources(tree_root)
+    assert {p.name for p in tree.walk()} == {"sample.json", "weird-name.json", "leaf.json", "raw.bin"}
+    assert {p.name for p in tree.walk("*.json")} == {"sample.json", "weird-name.json", "leaf.json"}
+    assert list(tree.walk(kind=FileType.BINARY)) == [tree_root / "binary" / "raw.bin"]
+
+
+def test_similar_matches_lexically_close_stems(tree_root: Path) -> None:
+    structured = build_resources(tree_root).structured
+    assert [v["id"] for v in structured.similar("sampel")] == ["sample1"]  # fuzzy of 'sample'
+    assert structured.similar("weirdname")[0]["id"] == "weird"  # hyphen-insensitive-ish
+    assert structured.similar("qqqq") == []  # nothing remotely close
+
+
 def test_missing_entry_suggests_close_name(tree_root: Path) -> None:
     structured = build_resources(tree_root).structured
     with pytest.raises(EntryNotFoundError, match="did you mean"):

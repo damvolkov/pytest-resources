@@ -34,11 +34,19 @@ def test_reads_tree(resources: pr.Resources):
 Files are read and decoded on first access and **memoized for the session**, so the same
 resource is parsed exactly once no matter how many tests touch it.
 
-## Filtering a folder
+## Extracting from a folder
 
-A folder is a list of files — `select()` filters it and returns the decoded values. A
-string argument is a **glob over the file name**; a compiled `re.Pattern` is
-**regex-searched**; `kind=` narrows by `FileType`:
+A folder is a list of files. Every query below shares the same filters: a **string is a
+glob over the file name**, a **compiled `re.Pattern` is regex-searched** (`.search`), and
+`kind=` narrows by canonical `FileType` (pass none of them to mean *everything*).
+
+| Call | Returns |
+|---|---|
+| `folder.select(*globs, kind=…)` | decoded **values** of matching files in this folder |
+| `folder.paths(*globs, kind=…)` | the **`Path`s** themselves — for raw bytes, `open()`, or handing a file to another library |
+| `folder.walk(*globs, kind=…)` | matching **`Path`s recursively** across the whole subtree, lazily |
+| `folder.similar(term, kind=…)` | decoded values whose file **stem is lexically close** to `term` (difflib, best first) |
+| `folder.choice(*globs, kind=…, rng=…)` | one **random** matching value (see next section) |
 
 ```python
 import re
@@ -46,16 +54,25 @@ import re
 from pytest_resources import FileType
 
 
-def test_filtering(resources: pr.Resources):
+def test_extraction(resources: pr.Resources):
     jsons = resources.data.select("*.json")  # glob (whole-file-name match)
-    users = resources.data.select("user_*")  # glob with a prefix
-    logs = resources.data.select(re.compile(r"^log"))  # regex: matched with .search
+    users = resources.data.select(re.compile(r"^user"))  # regex: matched with .search
     texts = resources.unstructured.select(kind=FileType.TEXT)  # by canonical kind
 
-    assert jsons and all(isinstance(v, dict) for v in jsons)
+    # reach the files themselves (raw bytes, or a path to hand to another lib)
+    raw = resources.data.paths("blob.*")[0].read_bytes()
+
+    # every .json anywhere below the root, without loading what you skip
+    for path in resources.walk("*.json", kind=FileType.JSON):
+        assert path.suffix == ".json"
+
+    # fuzzy name lookup: 'usr' still finds user.json
+    near = resources.data.similar("usr")
 ```
 
-`select()` with no arguments is `values()` — every file value in the folder.
+`select()` with no arguments is `values()` — every file value in the folder. All queries
+run against the already-walked tree, so filtering never re-reads the disk; only the values
+you actually touch are decoded (and cached).
 
 ## Randomising the choice
 
@@ -88,9 +105,9 @@ resources.structured.zzzzzzzz  # no hint when nothing is close
 
 ## Name collisions
 
-Navigation methods (`keys`, `values`, `items`, `path`, `select`, `choice`) win over a
-resource of the same name on **attribute** access. Reach such a resource with **item**
-access, which always resolves to the entry:
+Navigation and query methods (`keys`, `values`, `items`, `path`, `select`, `paths`, `walk`,
+`similar`, `choice`) win over a resource of the same name on **attribute** access. Reach
+such a resource with **item** access, which always resolves to the entry:
 
 ```python
 resources.data.select  # the method
