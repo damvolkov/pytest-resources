@@ -38,7 +38,7 @@ The `resources` fixture auto-loads via the `pytest11` entry point — no imports
 | **Recursive index, zero read** | each root is walked once (off the loop); only paths are held |
 | **Lazy + cached** | a file decodes on first access and is memoized for the session |
 | **Attr / item / iter views** | `r.a.b`, `r["a"]["b"]`, `list(r.a)` → list of decoded values |
-| **Extract from a folder** | `select` (values) · `paths` (files) · `walk` (recursive) · `similar` (fuzzy), by glob / regex / `kind` |
+| **Extract from a folder** | `select`/`first` · `paths` · `walk`/`awalk` (sync/async, lazy) · `similar` (fuzzy) · `as_dict`, by glob / regex / `kind` |
 | **Randomise the pick** | `r.a.choice(...)` (session-seeded) or pass your own `rng` |
 | **Typed by suffix** | `FileType` (`StrEnum`) resolves the extension; the loader table decodes |
 | **Open-ended fallback** | `CSV`/`TSV`/`PDF`/… and any unknown kind stay raw `bytes` |

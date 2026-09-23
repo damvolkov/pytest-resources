@@ -115,6 +115,28 @@ def test_similar_matches_lexically_close_stems(tree_root: Path) -> None:
     assert structured.similar("qqqq") == []  # nothing remotely close
 
 
+def test_first_is_deterministic_and_raises_when_empty(tree_root: Path) -> None:
+    structured = build_resources(tree_root).structured
+    assert structured.first("*.json")["id"] == "sample1"  # name order, not random
+    with pytest.raises(ResourceError):
+        structured.first("*.toml")
+
+
+def test_as_dict_exposes_nested_plain_dict(tree_root: Path) -> None:
+    nested = build_resources(tree_root).as_dict()
+    assert set(nested) == {"binary", "structured"}
+    assert nested["structured"]["deep"]["leaf"]["id"] == "deep"  # folders recurse
+    assert isinstance(nested["binary"]["raw"], bytes)  # unbound kind -> raw bytes
+
+
+async def test_awalk_matches_walk(tree_root: Path) -> None:
+    tree = build_resources(tree_root)
+    synced = {p.name for p in tree.walk("*.json")}
+    asynced = {p.name async for p in tree.awalk("*.json")}
+    assert asynced == synced == {"sample.json", "weird-name.json", "leaf.json"}
+    assert [p.name async for p in tree.awalk(kind=FileType.BINARY)] == ["raw.bin"]
+
+
 def test_missing_entry_suggests_close_name(tree_root: Path) -> None:
     structured = build_resources(tree_root).structured
     with pytest.raises(EntryNotFoundError, match="did you mean"):

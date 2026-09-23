@@ -14,7 +14,7 @@ from pytest_resources.formats import FileType
 from pytest_resources.loaders import _raw
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import AsyncIterator, Iterator, Mapping
     from re import Pattern
     from typing import Any
 
@@ -64,7 +64,7 @@ class ResourceNode:
 
     __slots__ = ("_context", "_entries", "_path")
 
-    def __init__(self, path: Path, entries: dict[str, object], context: _Context) -> None:
+    def __init__(self, path: Path, entries: dict[str, Path | ResourceNode], context: _Context) -> None:
         self._path = path
         self._entries = entries
         self._context = context
@@ -94,6 +94,14 @@ class ResourceNode:
             if isinstance(entry, Path) and _accept(entry, kind, matchers):
                 yield entry
 
+    async def _awalk(self, matchers: tuple[Pattern[str], ...], kind: FileType | None) -> AsyncIterator[Path]:
+        for entry in self._entries.values():
+            if isinstance(entry, ResourceNode):
+                async for path in entry._awalk(matchers, kind):
+                    yield path
+            if isinstance(entry, Path) and _accept(entry, kind, matchers):
+                yield entry
+
     ############################################################
 
     ##### PUBLIC #####
@@ -115,9 +123,24 @@ class ResourceNode:
         """``(name, resolved)`` pairs: files parsed, directories as nodes."""
         return [(name, self._value(entry)) for name, entry in self._entries.items()]
 
+    def as_dict(self) -> dict[str, Any]:
+        """Plain nested ``dict`` of the subtree: folders recurse, files are decoded values."""
+        return {
+            name: child.as_dict() if isinstance(child, ResourceNode) else self._context.load(child)
+            for name, child in self._entries.items()
+        }
+
     def select(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> list[Any]:
         """Decoded values of files in this folder, narrowed by glob/regex and optional kind."""
         return [self._context.load(file) for file in self._files(patterns, kind)]
+
+    def first(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> Any:
+        """The first matching file value in name order (deterministic twin of ``choice``)."""
+        files = self._files(patterns, kind)
+        if not files:
+            msg = f"{self._path.name!r} has no matching file"
+            raise ResourceError(msg)
+        return self._context.load(files[0])
 
     def paths(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> list[Path]:
         """Paths of files in this folder under the same filters — for raw bytes or ``open()``."""
@@ -126,6 +149,10 @@ class ResourceNode:
     def walk(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> Iterator[Path]:
         """Depth-first Paths of every file in this subtree passing the filters, lazily."""
         return self._walk(tuple(map(_matcher, patterns)), kind)
+
+    def awalk(self, *patterns: str | Pattern[str], kind: FileType | None = None) -> AsyncIterator[Path]:
+        """Async-generator twin of ``walk`` for streaming a large tree with ``async for``."""
+        return self._awalk(tuple(map(_matcher, patterns)), kind)
 
     def similar(self, term: str, kind: FileType | None = None, *, n: int = 3, cutoff: float = 0.6) -> list[Any]:
         """Decoded values whose file stem is lexically close to ``term`` (best first)."""

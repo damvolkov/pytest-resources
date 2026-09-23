@@ -29,7 +29,7 @@ absent.
 | Capability | How |
 |---|---|
 | Navigate like the filesystem | `r.a.b`, `r["a"]["b"]`, `list(r.a)`, `.keys()/.values()/.items()`, `in`, `len` |
-| Extract from a folder | `select` (values) · `paths` (files) · `walk` (recursive) · `similar` (fuzzy) — by glob / regex / kind |
+| Extract from a folder | `select`/`first` (values) · `paths` (files) · `walk`/`awalk` (recursive, sync/async) · `similar` (fuzzy) · `as_dict` (nested export) |
 | Randomise a pick | `r.a.choice(...)` (session-seeded) or pass your own `rng` |
 | Lazy + cached | nothing read at collection; each file decoded once per session |
 | Any format, honest fallback | unknown or unbound kinds hand back `bytes` |

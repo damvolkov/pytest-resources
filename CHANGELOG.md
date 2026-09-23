@@ -15,6 +15,12 @@ adheres to [Semantic Versioning](https://semver.org/).
   `open()`, or handing a fixture file to another library).
 - `ResourceNode.walk(...)`: depth-first, lazy, recursive file `Path`s across a subtree,
   with the same glob / regex / `kind` filters.
+- `ResourceNode.awalk(...)`: the async-generator twin of `walk` for streaming large trees
+  with `async for` (pairs with `abuild_resources`).
+- `ResourceNode.first(...)`: the first matching file value in name order — the deterministic
+  twin of `choice` (raises `ResourceError` when nothing matches).
+- `ResourceNode.as_dict()`: the whole subtree as a plain nested `dict` (folders recurse,
+  files are decoded values) — for snapshots and payload comparison.
 - `ResourceNode.similar(term, kind=..., n=..., cutoff=...)`: values whose file *stem* is
   lexically close to `term` (`difflib.get_close_matches`), best first — a fuzzy lookup.
 - `ResourceNode.choice(*globs_or_regex, kind=..., rng=...)`: a random file value, using the

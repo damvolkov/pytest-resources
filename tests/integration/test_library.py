@@ -65,3 +65,15 @@ def test_extraction_toolbox_over_the_fixture(resources: pr.Resources) -> None:
     # random pick is always a real member of the selection
     chosen = resources.structured.choice("*.json")
     assert chosen in resources.structured.select("*.json")
+
+
+def test_first_and_as_dict_over_the_fixture(resources: pr.Resources) -> None:
+    assert resources.structured.first("*.json") == resources.structured.select("*.json")[0]
+    nested = resources.structured.as_dict()
+    assert {"sample", "sample2", "nested"} <= set(nested)
+    assert nested["nested"]["deep"]["id"] == "deep"  # folders recurse into plain dicts
+
+
+async def test_awalk_streams_over_the_fixture(resources: pr.Resources) -> None:
+    seen = [p.name async for p in resources.structured.awalk("*.json")]
+    assert set(seen) == {"sample.json", "sample2.json", "deep.json"}

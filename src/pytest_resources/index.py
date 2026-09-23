@@ -30,7 +30,7 @@ def _visible(name: str) -> bool:
     return not name.startswith(".") and name != "__pycache__"
 
 
-def _children(path: Path, context: _Context) -> dict[str, object]:
+def _children(path: Path, context: _Context) -> dict[str, Path | ResourceNode]:
     entries = sorted(path.iterdir(), key=attrgetter("name"))
     return {
         _key(entry.name): (_node(entry, context) if entry.is_dir() else entry)
@@ -57,9 +57,9 @@ def _roots(root: Path | Iterable[Path]) -> tuple[Path, ...]:
             return tuple(root)
 
 
-def _merge(paths: tuple[Path, ...], context: _Context) -> dict[str, object]:
+def _merge(paths: tuple[Path, ...], context: _Context) -> dict[str, Path | ResourceNode]:
     ### Flat top-level merge across roots; a later root overrides an earlier key.
-    merged: dict[str, object] = {}
+    merged: dict[str, Path | ResourceNode] = {}
     for path in paths:
         merged |= _children(path, context)
     return merged

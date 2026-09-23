@@ -43,10 +43,13 @@ glob over the file name**, a **compiled `re.Pattern` is regex-searched** (`.sear
 | Call | Returns |
 |---|---|
 | `folder.select(*globs, kind=…)` | decoded **values** of matching files in this folder |
+| `folder.first(*globs, kind=…)` | the **first** matching value in name order (deterministic) |
 | `folder.paths(*globs, kind=…)` | the **`Path`s** themselves — for raw bytes, `open()`, or handing a file to another library |
 | `folder.walk(*globs, kind=…)` | matching **`Path`s recursively** across the whole subtree, lazily |
+| `folder.awalk(*globs, kind=…)` | the **async-generator twin** of `walk`, for streaming with `async for` |
 | `folder.similar(term, kind=…)` | decoded values whose file **stem is lexically close** to `term` (difflib, best first) |
 | `folder.choice(*globs, kind=…, rng=…)` | one **random** matching value (see next section) |
+| `folder.as_dict()` | the whole subtree as a **plain nested `dict`** — folders recurse, files are values |
 
 ```python
 import re
@@ -92,6 +95,26 @@ def test_random_fixture(resources: pr.Resources):
     two = random.Random(0).sample(resources.videos.select("*.mp4"), 2)
 ```
 
+## Streaming a large tree (async)
+
+For big resource trees, build off the event loop and walk it lazily with the async
+generator, so nothing is held as a list and only the values you touch are decoded:
+
+```python
+from pathlib import Path
+
+import pytest_resources as pr
+
+
+async def test_stream():
+    tree = await pr.abuild_resources(Path("fixtures"))  # walked off the loop
+    async for path in tree.awalk("*.json"):  # streamed, one Path at a time
+        assert path.suffix == ".json"
+```
+
+`awalk` is the async twin of `walk`; both are lazy generators and share the same
+glob / regex / `kind` filters.
+
 ## Errors and "did you mean"
 
 Attribute misses raise `EntryNotFoundError` (a subclass of both `ResourceError` and
@@ -105,9 +128,10 @@ resources.structured.zzzzzzzz  # no hint when nothing is close
 
 ## Name collisions
 
-Navigation and query methods (`keys`, `values`, `items`, `path`, `select`, `paths`, `walk`,
-`similar`, `choice`) win over a resource of the same name on **attribute** access. Reach
-such a resource with **item** access, which always resolves to the entry:
+Navigation and query methods (`keys`, `values`, `items`, `as_dict`, `path`, `select`,
+`first`, `paths`, `walk`, `awalk`, `similar`, `choice`) win over a resource of the same name
+on **attribute** access. Reach such a resource with **item** access, which always resolves
+to the entry:
 
 ```python
 resources.data.select  # the method
