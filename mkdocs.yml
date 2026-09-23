@@ -1,0 +1,24 @@
+site_name: pytest-resources
+site_description: Lazy, typed, attribute-navigable resource fixtures for pytest.
+repo_url: https://github.com/damvolkov/pytest-resources
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - Configuration: configuration.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
