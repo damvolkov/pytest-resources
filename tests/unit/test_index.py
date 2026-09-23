@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import random
+import re
 from typing import TYPE_CHECKING
 
 import pytest
@@ -62,6 +64,41 @@ def test_iterates_only_file_values(tree_root: Path) -> None:
 def test_values_returns_only_file_values(tree_root: Path) -> None:
     values = build_resources(tree_root).structured.values()
     assert [v["id"] for v in values] == ["sample1", "weird"]  # the `deep` directory stays out
+
+
+def test_select_by_glob_and_regex(tree_root: Path) -> None:
+    structured = build_resources(tree_root).structured
+    assert {v["id"] for v in structured.select("*.json")} == {"sample1", "weird"}
+    assert [v["id"] for v in structured.select("weird-name*")] == ["weird"]  # glob over the file name
+    assert [v["id"] for v in structured.select(re.compile(r"^sam"))] == ["sample1"]  # regex search
+
+
+def test_select_by_kind_and_empty(tree_root: Path) -> None:
+    tree = build_resources(tree_root)
+    assert len(tree.structured.select(kind=FileType.JSON)) == 2
+    assert tree.structured.select("*.toml") == []  # nothing in this folder
+    assert isinstance(tree.binary.select(kind=FileType.BINARY)[0], bytes)
+
+
+def test_choice_is_random_but_bounded(tree_root: Path) -> None:
+    structured = build_resources(tree_root).structured
+    assert structured.choice(kind=FileType.JSON, rng=random.Random(1234))["id"] in {"sample1", "weird"}
+    subset = random.Random(0).sample(structured.select("*.json"), 2)  # random-k, no reserved name
+    assert {v["id"] for v in subset} == {"sample1", "weird"}
+
+
+def test_choice_rejects_empty_selection(tree_root: Path) -> None:
+    with pytest.raises(ResourceError):
+        build_resources(tree_root).structured.choice("*.toml")
+
+
+def test_missing_entry_suggests_close_name(tree_root: Path) -> None:
+    structured = build_resources(tree_root).structured
+    with pytest.raises(EntryNotFoundError, match="did you mean"):
+        _ = structured.sample2  # close to the real `sample`
+    with pytest.raises(EntryNotFoundError) as exc:  # nothing remotely similar: no suggestion
+        _ = structured.zzzzzzzz
+    assert "did you mean" not in str(exc.value)
 
 
 def test_unbound_kind_stays_bytes(tree_root: Path) -> None:

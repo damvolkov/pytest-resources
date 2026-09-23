@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `ResourceNode.select(*globs_or_regex, kind=...)`: filter a folder's files by name
+  (glob, or a compiled regex searched with `.search`) and/or canonical `FileType`;
+  returns the decoded values. `values()` now delegates to it.
+- `ResourceNode.choice(*globs_or_regex, kind=..., rng=...)`: a random file value, using the
+  session-seeded global `random` by default (so `pytest-randomly` keeps it reproducible) or
+  a caller-supplied `random.Random`.
+- A "did you mean" hint, via `difflib`, on `EntryNotFoundError` / `KeyError` misses.
 - `pytest_resources_roots(roots)` hook: contribute extra resource directories from a
   `conftest.py`, additively (mirrors `pytest_resource_loaders`).
 - **Multiple resources roots**: `--resources-root` is now repeatable and the
@@ -16,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 - `build_resources` / `abuild_resources` accept a single path or a sequence of paths.
 - The `resources` fixture creates a missing root (e.g. a fresh `tests/resources`) instead
   of erroring; the programmatic `build_resources` stays strict (raises `ResourceError`).
+
+### Removed
+
+- Dropped the unused `pytest-xdist` test dependency (nothing enabled `-n`/`--dist`).
 
 ## [0.1.0]
 

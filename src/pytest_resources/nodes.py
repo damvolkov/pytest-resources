@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import difflib
+import fnmatch
+import random
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pytest_resources.errors import EntryNotFoundError
+from pytest_resources.errors import EntryNotFoundError, ResourceError
 from pytest_resources.formats import FileType
 from pytest_resources.loaders import _raw
 
@@ -57,6 +61,22 @@ class ResourceNode:
             case _:
                 return entry
 
+    def _absent(self, name: str) -> str:
+        ### One message for both miss paths; difflib nudges the nearest name, if any.
+        hint = difflib.get_close_matches(name, self._entries, n=1)
+        return f"{self._path.name!r} has no entry {name!r}" + (f" — did you mean {hint[0]!r}?" if hint else "")
+
+    def _select_paths(self, patterns: tuple[str | re.Pattern[str], ...], kind: FileType | None) -> list[Path]:
+        ### A string pattern is a glob over the file name; a compiled one is regex-searched.
+        matchers = tuple(m if isinstance(m, re.Pattern) else re.compile(fnmatch.translate(m)) for m in patterns)
+        return [
+            file
+            for file in self._entries.values()
+            if isinstance(file, Path)
+            and (kind is None or FileType.of_path(file) is kind)
+            and (not matchers or any(matcher.search(file.name) for matcher in matchers))
+        ]
+
     ############################################################
 
     ##### PUBLIC #####
@@ -72,24 +92,39 @@ class ResourceNode:
 
     def values(self) -> list[Any]:
         """Every file entry parsed; directories stay out of the value stream."""
-        return [self._context.load(entry) for entry in self._entries.values() if isinstance(entry, Path)]
+        return self.select()
 
     def items(self) -> list[tuple[str, Any]]:
         """``(name, resolved)`` pairs: files parsed, directories as nodes."""
         return [(name, self._value(entry)) for name, entry in self._entries.items()]
 
+    def select(self, *patterns: str | re.Pattern[str], kind: FileType | None = None) -> list[Any]:
+        """Decoded values of files in this folder, narrowed by glob/regex and optional kind."""
+        return [self._context.load(file) for file in self._select_paths(patterns, kind)]
+
+    def choice(
+        self,
+        *patterns: str | re.Pattern[str],
+        kind: FileType | None = None,
+        rng: random.Random | None = None,
+    ) -> Any:
+        """One random file value from the selection (default RNG honours the session seed)."""
+        candidates = self.select(*patterns, kind=kind)
+        if not candidates:
+            msg = f"{self._path.name!r} has no file to choose from"
+            raise ResourceError(msg)
+        return (rng or random).choice(candidates)
+
     def __getattr__(self, name: str) -> Any:
         entry = self._entries.get(name, _MISSING)
         if entry is _MISSING:
-            msg = f"{self._path.name!r} has no entry {name!r}"
-            raise EntryNotFoundError(msg)
+            raise EntryNotFoundError(self._absent(name))
         return self._value(entry)
 
     def __getitem__(self, name: str) -> Any:
         entry = self._entries.get(name, _MISSING)
         if entry is _MISSING:
-            msg = f"{self._path.name!r} has no entry {name!r}"
-            raise KeyError(msg)
+            raise KeyError(self._absent(name))
         return self._value(entry)
 
     def __iter__(self) -> Iterator[Any]:
