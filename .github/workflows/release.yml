@@ -1,12 +1,14 @@
 name: Release
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing v* tag to build and publish to PyPI
-        required: true
-        default: v0.1.0
+        description: Existing v* tag to build and publish (empty on tag-push trigger)
+        required: false
+        default: ''
 
 concurrency:
   group: release
@@ -19,20 +21,21 @@ jobs:
   pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/pytest-resources/${{ inputs.tag }}
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
-      - name: Build sdist and wheel (version from the tag)
+      - name: Build sdist and wheel (version resolved from the tag)
         run: uv build
-      - name: Publish to PyPI (trusted publishing / OIDC)
+      - name: Publish to PyPI
+        # zizmor: ignore[use-trusted-publishing]  # deliberate: token secret = zero PyPI-side config per release
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
