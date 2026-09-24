@@ -19,6 +19,10 @@ def test_profile(resources: pr.Resources):
 
     jsons = resources.data.select("*.json")   # filter a folder (glob / regex / kind)
     pick = resources.data.choice("*.json")    # random pick, seeded per run
+
+    ada = resources.make(User, name="ada")    # random model instance    [objects]
+    squad = resources.batch(User, 8)          # a typed list of them     [objects]
+    pdf = resources.file("report.pdf")        # synthetic file, indexed [files]
 ```
 
 ## Install
@@ -26,6 +30,9 @@ def test_profile(resources: pr.Resources):
 ```bash
 uv add --group test "pytest-resources[serde]"   # e-serde default codecs
 uv add --group test pytest-resources            # stdlib-only (json + tomllib)
+uv add --group test "pytest-resources[objects]" # resources.make()/batch(): random model objects
+uv add --group test "pytest-resources[files]"   # resources.file(): synthetic files, 25 formats
+uv add --group test "pytest-resources[random]"  # both
 ```
 
 The `resources` fixture auto-loads via the `pytest11` entry point — no imports in your
@@ -40,6 +47,7 @@ The `resources` fixture auto-loads via the `pytest11` entry point — no imports
 | **Attr / item / iter views** | `r.a.b`, `r["a"]["b"]`, `list(r.a)` → list of decoded values |
 | **Extract from a folder** | `select`/`first` · `paths` · `walk`/`awalk` (sync/async, lazy) · `similar` (fuzzy) · `as_dict`, by glob / regex / `kind` |
 | **Randomise the pick** | `r.a.choice(...)` (session-seeded) or pass your own `rng` |
+| **Synthesize on the fly** | `make(Model \| hint, seed, **pins)` / `batch(Model \| hint, n)` for objects, `file(kind \| name, ...)` for real files adopted into the tree — optional `[objects]` / `[files]` / `[random]` extras |
 | **Typed by suffix** | `FileType` (`StrEnum`) resolves the extension; the loader table decodes |
 | **Open-ended fallback** | `CSV`/`TSV`/`PDF`/… and any unknown kind stay raw `bytes` |
 | **Many roots, one tree** | CLI / ini / `pytest_resources_roots` hook, merged (later wins), auto-created |

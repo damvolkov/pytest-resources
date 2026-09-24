@@ -11,3 +11,12 @@ class EntryNotFoundError(ResourceError, AttributeError):
     Subclasses ``AttributeError`` so attribute access keeps its protocol while the
     error stays typed and catchable as ``ResourceError``.
     """
+
+
+class ExtraNotInstalledError(ResourceError, ImportError):
+    """A synthesis method was called without the optional extra that backs it.
+
+    Subclasses ``ImportError`` so a missing dependency reads as what it is while
+    staying catchable as ``ResourceError``; the message names the exact extra and
+    the command that installs it.
+    """

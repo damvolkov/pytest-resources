@@ -43,6 +43,14 @@ def test_resources_fixture_bytes_for_unregistered_kind(resources: Resources) -> 
     assert isinstance(resources.data.movies, bytes)
 
 
+def test_resources_fixture_synthesizes_on_the_fly(resources: Resources) -> None:
+    assert isinstance(resources.make(int), int)
+    assert len(resources.batch(str, 3)) == 3
+    path = resources.file("txt", name="synth_smoke")
+    assert path.exists()
+    assert isinstance(resources.synth_smoke, str)
+
+
 ##### PLUGIN HOOKS (driven directly so they are measured, not only at startup) #####
 
 

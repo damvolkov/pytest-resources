@@ -6,8 +6,9 @@ import difflib
 import fnmatch
 import random
 import re
+from itertools import count
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol, cast
 
 from pytest_resources.errors import EntryNotFoundError, ResourceError
 from pytest_resources.formats import FileType
@@ -23,6 +24,11 @@ if TYPE_CHECKING:
 _MISSING = object()
 
 ##### PRIVATE #####
+
+
+def _key(name: str) -> str:
+    """Identifier-safe attribute name from a file stem or a directory name."""
+    return re.sub(r"\W|^(?=\d)", "_", Path(name).stem)
 
 
 def _matcher(pattern: str | Pattern[str]) -> Pattern[str]:
@@ -57,6 +63,16 @@ class _Context:
         loaded = self._registry.get(FileType.of_path(path), _raw)(path.read_bytes())
         self._cache[path] = loaded
         return loaded
+
+
+class _Synthesizer(Protocol):
+    """The seam Resources delegates synthesis to; structurally, it is the ``SynthProvider``."""
+
+    def make(self, spec: Any, /, *, seed: int | None = None, **fields: Any) -> Any: ...
+
+    def batch(self, spec: Any, /, n: int = 10, *, seed: int | None = None, **fields: Any) -> list[Any]: ...
+
+    def file(self, kind: FileType | str, /, *, name: str | None = None, seed: int | None = None) -> Path: ...
 
 
 class ResourceNode:
@@ -203,4 +219,44 @@ class ResourceNode:
 class Resources(ResourceNode):
     """Root of an indexed resources tree — the object the ``resources`` fixture yields."""
 
-    __slots__ = ()
+    __slots__ = ("_synth",)
+
+    def __init__(self, path: Path, entries: dict[str, Path | ResourceNode], context: _Context) -> None:
+        super().__init__(path, entries, context)
+        self._synth: _Synthesizer | None = None
+
+    ##### PRIVATE #####
+
+    def _common_synth(self) -> _Synthesizer:
+        ### The synthesis module is imported on first use only: absent extras must not cost anything.
+        if self._synth is None:
+            from pytest_resources.synth import SynthProvider  # noqa: PLC0415 -- optional feature, not a core import
+
+            self._synth = SynthProvider()
+        return self._synth
+
+    def _file_adopt(self, path: Path, *, replace: bool) -> None:
+        ### A named synthetic owns its slot; an anonymous one never overwrites an existing entry.
+        key = base = _key(path.stem)
+        collision = count(2)
+        while not replace and key in self._entries and self._entries[key] != path:
+            key = f"{base}_{next(collision)}"
+        self._entries[key] = path
+
+    ############################################################
+
+    ##### PUBLIC #####
+
+    def make[T](self, spec: type[T], /, *, seed: int | None = None, **fields: Any) -> T:
+        """One synthesized instance of a project model or type hint — random or field-pinned (extra: objects)."""
+        return cast("T", self._common_synth().make(spec, seed=seed, **fields))
+
+    def batch[T](self, spec: type[T], /, n: int = 10, *, seed: int | None = None, **fields: Any) -> list[T]:
+        """``n`` synthesized instances of a project model or type hint (extra: objects)."""
+        return cast("list[T]", self._common_synth().batch(spec, n, seed=seed, **fields))
+
+    def file(self, kind: FileType | str, /, *, name: str | None = None, seed: int | None = None) -> Path:
+        """Synthesized file, written to disk and adopted into the tree like any indexed file (extra: files)."""
+        path = self._common_synth().file(kind, name=name, seed=seed)
+        self._file_adopt(path, replace=name is not None)
+        return path

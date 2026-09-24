@@ -42,7 +42,7 @@ def test_public_api_decodes_bound_kinds(project_tree: Path) -> None:
 def test_public_api_falls_back_to_bytes_for_unbound_kinds(project_tree: Path) -> None:
     tree = pr.build_resources(project_tree)
     assert isinstance(tree.data.rows, bytes)  # CSV has no default codec
-    assert isinstance(tree.assets.diagram, bytes)  # .pdf resolves to BINARY
+    assert isinstance(tree.assets.diagram, bytes)  # PDF kind exists but has no bound codec
     assert tree.data.rows.decode().splitlines()[0] == "name,age"  # the caller decodes
 
 

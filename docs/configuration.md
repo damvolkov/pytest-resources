@@ -39,8 +39,11 @@ not a directory.
 
 `FileType` is a `StrEnum` resolved from the file extension through a frozen suffix table.
 Known kinds: `JSON, JSONC, NDJSON, YAML, TOML, INI, CSV, TSV, MARKDOWN, TEXT, HTML, XML,
-PYTHON, BINARY`. Any other extension — a `.pdf`, an image, an unknown blob — resolves to
-`BINARY`.
+PYTHON`, the document/image families `PDF, DOCX, XLSX, PPTX, EPUB, RTF, ODT, ODS, ODP,
+EML, MP3, ZIP, TAR, ICO, BMP, GIF, JPEG, PNG, TIFF, WEBP`, and `BINARY`. Any other
+extension resolves to `BINARY`. Every kind is a navigation and loader key; document and
+image kinds are typed but bind no codec by default, so they decode to raw `bytes` — and
+they are exactly the kinds the `[files]` extra can synthesize.
 
 ## The loader table — what decodes how
 
@@ -71,9 +74,15 @@ Without it, only `JSON`/`TOML`/`NDJSON`/`MARKDOWN`/`TEXT` decode and the rest st
 ```bash
 uv add --group test "pytest-resources[serde]"   # e-serde default codecs (recommended)
 uv add --group test pytest-resources            # stdlib-only, zero extra deps
+uv add --group test "pytest-resources[objects]" # random objects from your models (polyfactory)
+uv add --group test "pytest-resources[files]"   # synthetic files, 25 formats (faker-file)
+uv add --group test "pytest-resources[random]"  # both synthesis backends
 ```
 
-`e-serde` is an optional `[serde]` extra, never a core dependency of the plugin.
+`e-serde` is an optional `[serde]` extra, never a core dependency of the plugin. The
+synthesis extras gate `resources.make()` / `resources.batch()` (`[objects]`) and
+`resources.file()` (`[files]`); calling either without its extra raises
+`ExtraNotInstalledError` naming the exact install command.
 
 ## Registering custom loaders
 

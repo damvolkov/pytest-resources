@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-import re
 from operator import attrgetter
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from pytest_resources.errors import ResourceError
 from pytest_resources.loaders import default_loaders
-from pytest_resources.nodes import ResourceNode, Resources, _Context
+from pytest_resources.nodes import ResourceNode, Resources, _Context, _key
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -19,11 +18,6 @@ if TYPE_CHECKING:
     from pytest_resources.loaders import Loader
 
 ##### PRIVATE #####
-
-
-def _key(name: str) -> str:
-    """Identifier-safe attribute name from a file stem or a directory name."""
-    return re.sub(r"\W|^(?=\d)", "_", Path(name).stem)
 
 
 def _visible(name: str) -> bool:

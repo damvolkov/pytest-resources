@@ -28,6 +28,26 @@ class FileType(StrEnum):
     HTML = auto()
     XML = auto()
     PYTHON = auto()
+    PDF = auto()
+    DOCX = auto()
+    XLSX = auto()
+    PPTX = auto()
+    EPUB = auto()
+    RTF = auto()
+    ODT = auto()
+    ODS = auto()
+    ODP = auto()
+    EML = auto()
+    MP3 = auto()
+    ZIP = auto()
+    TAR = auto()
+    ICO = auto()
+    BMP = auto()
+    GIF = auto()
+    JPEG = auto()
+    PNG = auto()
+    TIFF = auto()
+    WEBP = auto()
     BINARY = auto()
 
     @classmethod
@@ -63,5 +83,27 @@ _SUFFIXES: Final[Mapping[str, FileType]] = MappingProxyType(
         ".htm": FileType.HTML,
         ".xml": FileType.XML,
         ".py": FileType.PYTHON,
+        ".pdf": FileType.PDF,
+        ".docx": FileType.DOCX,
+        ".xlsx": FileType.XLSX,
+        ".pptx": FileType.PPTX,
+        ".epub": FileType.EPUB,
+        ".rtf": FileType.RTF,
+        ".odt": FileType.ODT,
+        ".ods": FileType.ODS,
+        ".odp": FileType.ODP,
+        ".eml": FileType.EML,
+        ".mp3": FileType.MP3,
+        ".zip": FileType.ZIP,
+        ".tar": FileType.TAR,
+        ".ico": FileType.ICO,
+        ".bmp": FileType.BMP,
+        ".gif": FileType.GIF,
+        ".jpeg": FileType.JPEG,
+        ".jpg": FileType.JPEG,
+        ".png": FileType.PNG,
+        ".tif": FileType.TIFF,
+        ".tiff": FileType.TIFF,
+        ".webp": FileType.WEBP,
     }
 )

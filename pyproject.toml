@@ -28,6 +28,9 @@ dependencies = ["pytest>=8.0"]
 
 [project.optional-dependencies]
 serde = ["e-serde>=0.2.0,<0.3"]
+objects = ["polyfactory>=2.22"]
+files = ["faker-file[common]>=0.19"]
+random = ["pytest-resources[objects,files]"]
 
 [project.urls]
 Homepage = "https://github.com/damvolkov/pytest-resources"
@@ -54,6 +57,11 @@ test = [
     "pytest-randomly>=5.0",
     "pytest-timeout>=2.4",
     "e-serde>=0.2.0,<0.3",
+    "polyfactory>=2.22",
+    "faker-file[common]>=0.19",
+    "pydantic>=2.13.5",
+    "msgspec>=0.21.1",
+    "attrs>=26.1.0",
 ]
 docs = [
     "mkdocs-gen-files>=0.6",

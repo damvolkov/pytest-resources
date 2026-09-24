@@ -11,7 +11,7 @@ entry point; this module is the import-time surface for programmatic use.
 
 from importlib.metadata import PackageNotFoundError, version
 
-from pytest_resources.errors import EntryNotFoundError, ResourceError
+from pytest_resources.errors import EntryNotFoundError, ExtraNotInstalledError, ResourceError
 from pytest_resources.formats import FileType
 from pytest_resources.index import abuild_resources, build_resources
 from pytest_resources.loaders import Loader, default_loaders
@@ -24,6 +24,7 @@ except PackageNotFoundError:  # source tree, not installed
 
 __all__ = [
     "EntryNotFoundError",
+    "ExtraNotInstalledError",
     "FileType",
     "Loader",
     "ResourceError",

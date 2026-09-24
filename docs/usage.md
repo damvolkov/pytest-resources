@@ -95,6 +95,46 @@ def test_random_fixture(resources: pr.Resources):
     two = random.Random(0).sample(resources.videos.select("*.mp4"), 2)
 ```
 
+## Synthesizing objects and files on the fly
+
+The index covers files that *exist*. `make()`, `batch()` and `file()` cover the ones
+that don't: instances from your own models or any type hint — singly or in batches —
+and real files in 25 formats, written to disk and **adopted into the tree**, so
+`select`, `choice`, attribute access and the loader table treat them exactly like
+authored resources. All three are gated by optional extras (`[objects]` for
+`make`/`batch`, `[files]` for `file`, `[random]` for the pair) and raise
+`ExtraNotInstalledError` — with the exact install command — when their extra is absent:
+
+```python
+from dataclasses import dataclass
+
+import pytest_resources as pr
+
+
+@dataclass
+class User:
+    name: str
+    age: int
+
+
+def test_processors(resources: pr.Resources):
+    user = resources.make(User)  # one instance, random values, seeded per run
+    squad = resources.batch(User, 8)  # eight of them, typed as a list
+    ada = resources.make(User, name="ada")  # pinned field, rest random
+    rows = resources.make(list[tuple[str, int]])  # bare type hint, no model
+
+    pdf = resources.file("report.pdf")  # real PDF on disk, already indexed
+    assert resources.report == pdf.read_bytes()  # navigable like any file
+    logo = resources.file("png", name="logo", seed=1)  # reproducible content
+```
+
+`make()` autodetects dataclasses, pydantic, msgspec, attrs and TypedDict models;
+`file()` accepts a `FileType`, a bare kind name (`"pdf"`, `"txt"`) or any filename —
+and all three honor `seed=` for explicit determinism. `MP3` is on the recipe table but its
+backend (gTTS) needs network; pick another format for offline suites. Formats without a
+recipe (`SVG`, `YAML`, `TOML`, …) raise `ResourceError` listing what *is* synthesizable —
+the same happens for any unknown suffix, which never silently degrades to raw bytes.
+
 ## Streaming a large tree (async)
 
 For big resource trees, build off the event loop and walk it lazily with the async
@@ -129,7 +169,7 @@ resources.structured.zzzzzzzz  # no hint when nothing is close
 ## Name collisions
 
 Navigation and query methods (`keys`, `values`, `items`, `as_dict`, `path`, `select`,
-`first`, `paths`, `walk`, `awalk`, `similar`, `choice`) win over a resource of the same name
+`first`, `paths`, `walk`, `awalk`, `similar`, `choice`, `make`, `batch`, `file`) win over a resource of the same name
 on **attribute** access. Reach such a resource with **item** access, which always resolves
 to the entry:
 
