@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-24
+
+### Added
+
+- Optional synthesis surface on `Resources`, loaded lazily only when used: `make()` and
+  `batch()` build random instances of project models (dataclass, pydantic, msgspec, attrs,
+  TypedDict) or any bare type hint — singly or in size-`n` lists, with field overrides and
+  `seed`; `file()` writes a real
+  synthetic file in 25 formats (PDF, DOCX, XLSX, images, archives, …) to disk and **adopts**
+  it into the tree, so it navigates, filters and decodes like any authored resource.
+- Extras `[objects]` (polyfactory), `[files]` (faker-file) and `[random]` (both). Calling a
+  method without its extra raises `ExtraNotInstalledError` — a `ResourceError` /
+  `ImportError` carrying the exact install command. The backends are hidden behind a single
+  vendor seam (`pytest_resources.synth`) and a structural port on `Resources`.
+- `FileType` growth: document and image kinds (`PDF, DOCX, XLSX, PPTX, EPUB, RTF, ODT, ODS,
+  ODP, EML, MP3, ZIP, TAR, ICO, BMP, GIF, JPEG, PNG, TIFF, WEBP`) now resolve from their
+  suffixes instead of collapsing into `BINARY`. Decode behaviour is unchanged — unbound
+  kinds still hand back raw `bytes` — and these are the kinds `file()` can synthesize.
+
 ## [0.1.0] - 2026-09-23
 
 First release.
@@ -35,5 +54,6 @@ First release.
 - A module-lifetime decode cache per tree, and typed misses (`EntryNotFoundError` /
   `KeyError`) that carry a `difflib` "did you mean" hint.
 
-[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.0
 [0.1.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.1.0
