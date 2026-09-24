@@ -210,7 +210,7 @@ tempCodeRunnerFile.py
 .pypirc
 
 # Local release secrets — never commit
-gh_token
+*_token
 *.token
 
 # Marimo
