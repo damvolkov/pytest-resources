@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-24
+
+### Fixed
+
+- The test suite is now cross-platform: file formats that `faker-file`/Pillow cannot
+  synthesize on Windows/macOS (missing system font, temporary-file locks) skip with a reason
+  instead of failing, and the synthetic-text assertion compares against the loader's raw
+  byte decode. No change to shipped behaviour.
+
 ## [0.2.0] - 2026-09-24
 
 ### Added
@@ -54,6 +63,7 @@ First release.
 - A module-lifetime decode cache per tree, and typed misses (`EntryNotFoundError` /
   `KeyError`) that carry a `difflib` "did you mean" hint.
 
-[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.1
 [0.2.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.0
 [0.1.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.1.0
