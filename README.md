@@ -1,9 +1,10 @@
 # pytest-resources
 
-Lazy, typed, attribute-navigable fixtures for test resource files — JSON / JSONC / YAML /
-TOML / INI decoded through [`e-serde`](https://pypi.org/project/e-serde/) by default,
-extensible to **any** canonical `bytes -> object` loader, and anything else handed back as
-raw `bytes`.
+Lazy, typed, attribute-navigable fixtures for test resource files — decoded through the
+**Python standard library** by default (`json` + `tomllib`, zero extra dependencies),
+extensible to **any** canonical `bytes -> object` loader. The optional
+[`e-serde`](https://pypi.org/project/e-serde/) extra is **recommended** as the fast,
+multi-format official loader; anything without a parser is handed back as raw `bytes`.
 
 You point it at one or more directories of sample files; it recursively indexes the tree
 without reading anything, and you reach, filter, randomise and synthesize parsed values
@@ -37,18 +38,18 @@ def test_profile(resources: pr.Resources):
 ## Install
 
 ```bash
-uv add --group test "pytest-resources[serde]"   # e-serde default codecs
-uv add --group test pytest-resources            # stdlib-only (json + tomllib)
+uv add --group test pytest-resources            # default: stdlib (json + tomllib), zero extra deps
+uv add --group test "pytest-resources[serde]"   # e-serde — fast, multi-format loader (recommended)
 uv add --group test "pytest-resources[objects]" # resources.make()/batch(): random model objects
 uv add --group test "pytest-resources[files]"   # resources.file(): synthetic files, 25 formats
-uv add --group test "pytest-resources[random]"  # both
+uv add --group test "pytest-resources[random]"  # both synthesis backends
 ```
 
 The `resources` fixture auto-loads via the `pytest11` entry point — no imports in your
 `conftest.py`. Everything (index, navigation, synthesis) is async-test friendly:
 `make`/`batch` are pure in-memory CPU and `abuild_resources`/`awalk` keep the loop free;
-calling a synthesis method without its extra raises `ExtraNotInstalledError` with the
-exact install command — the plugin never hard-depends on polyfactory or faker-file.
+a missing extra raises `ExtraNotInstalledError` with the exact install command — the plugin
+never hard-depends on e-serde, polyfactory or faker-file.
 
 ## What you get
 
@@ -64,7 +65,7 @@ exact install command — the plugin never hard-depends on polyfactory or faker-
 | **Open-ended fallback** | `CSV`/`TSV`/`PDF`/… and any unknown kind stay raw `bytes` |
 | **Many roots, one tree** | CLI / ini / `pytest_resources_roots` hook, merged (later wins), auto-created |
 | **Pluggable codecs** | override or add any kind through the `pytest_resource_loaders` hook |
-| **e-serde default, optional** | native Rust/C config codecs when installed; stdlib otherwise |
+| **Stdlib default, e-serde opt-in** | `json`/`tomllib` by default; register `eserde_loaders()` for the fast multi-format backend |
 | **Friendly misses** | `EntryNotFoundError` / `KeyError` carry a "did you mean" hint |
 
 ## Configuring the roots
@@ -106,6 +107,19 @@ def pytest_resource_loaders(register):
 `register` merges into the session's table, so you can override a default kind as easily
 as add an unknown one. Kinds left unbound hand back **raw bytes**.
 
+### The recommended official loader: e-serde
+
+The default is the standard library. Install the `[serde]` extra and register one call to
+make [`e-serde`](https://pypi.org/project/e-serde/) your official loader — ultrarapid,
+native Rust/C, and it decodes JSONC/YAML/INI too:
+
+```python
+from pytest_resources import eserde_loaders
+
+def pytest_resource_loaders(register):
+    register(eserde_loaders())
+```
+
 ## Programmatic use
 
 Outside pytest, build a tree yourself:
@@ -117,7 +131,8 @@ import pytest_resources as pr
 tree = pr.build_resources(Path("fixtures"))                      # sync, one root
 tree = pr.build_resources([Path("a"), Path("b")])               # merged roots, later wins
 tree = await pr.abuild_resources(Path("fixtures"))              # off the event loop
-table = pr.default_loaders()                                    # best available codecs
+table = pr.default_loaders()                                    # stdlib codecs (json + tomllib)
+tree = pr.build_resources(Path("fixtures"), pr.eserde_loaders())  # opt into e-serde instead
 ```
 
 ## Development

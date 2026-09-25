@@ -14,7 +14,7 @@ from importlib.metadata import PackageNotFoundError, version
 from pytest_resources.errors import EntryNotFoundError, ExtraNotInstalledError, ResourceError
 from pytest_resources.formats import FileType
 from pytest_resources.index import abuild_resources, build_resources
-from pytest_resources.loaders import Loader, default_loaders
+from pytest_resources.loaders import Loader, default_loaders, eserde_loaders
 from pytest_resources.nodes import ResourceNode, Resources
 
 try:
@@ -34,4 +34,5 @@ __all__ = [
     "abuild_resources",
     "build_resources",
     "default_loaders",
+    "eserde_loaders",
 ]

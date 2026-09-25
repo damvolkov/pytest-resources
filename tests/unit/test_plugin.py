@@ -35,7 +35,7 @@ def test_resources_fixture_is_indexed_tree(resources: Resources) -> None:
     assert isinstance(resources, pr.Resources)
     assert resources.structured.sample["id"] == "sample1"
     assert resources.config.settings["owner"]["name"] == "damien"
-    assert resources.config.manifest == {"ok": True, "retries": 3}
+    assert isinstance(resources.config.manifest, bytes)  # JSONC has no stdlib codec -> bytes by default
     assert isinstance(resources.unstructured.sample, str)
 
 

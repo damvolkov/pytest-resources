@@ -22,13 +22,14 @@ def test_profile(resources: pr.Resources):
     pdf = resources.file("report.pdf")  # a real synthesized PDF, already indexed [files]
 ```
 
-JSON / JSONC / YAML / TOML / INI decode through
-[e-serde](https://pypi.org/project/e-serde/) by default (any other kind is pluggable and
-falls back to raw `bytes`), with the standard library used automatically when e-serde is
-absent. `make()` / `batch()` / `file()` synthesize model instances and files in 25
-formats on the fly, adopted into the same navigable tree, behind the optional
-`[objects]` / `[files]` / `[random]` extras. Everything is async-test friendly:
-`abuild_resources` and `awalk` keep the loop free, `make`/`batch` are pure CPU.
+`JSON` and `TOML` decode through the **Python standard library** by default (`json` +
+`tomllib`, zero extra dependencies); any other kind is pluggable and otherwise falls back to
+raw `bytes`. Install the optional `[serde]` extra and register `eserde_loaders()` to adopt
+[e-serde](https://pypi.org/project/e-serde/) as your fast, multi-format official loader.
+`make()` / `batch()` / `file()` synthesize model instances and files in 25 formats on the
+fly, adopted into the same navigable tree, behind the `[objects]` / `[files]` / `[random]`
+extras. Everything is async-test friendly: `abuild_resources` and `awalk` keep the loop
+free, `make`/`batch` are pure CPU.
 
 ## At a glance
 
@@ -42,7 +43,7 @@ formats on the fly, adopted into the same navigable tree, behind the optional
 | Lazy + cached | nothing read at collection; each file decoded once per session |
 | Any format, honest fallback | unknown or unbound kinds hand back `bytes` |
 | One tree from many roots | CLI / ini / `pytest_resources_roots` hook, merged (later wins) |
-| Pluggable codecs | `pytest_resource_loaders` hook; e-serde optional (`[serde]`) |
+| Pluggable codecs | stdlib (`json`/`tomllib`) default; e-serde opt-in via `eserde_loaders()` (`[serde]`) |
 | Typed misses | `EntryNotFoundError` with a "did you mean" hint |
 
 - [Usage](usage.md) — navigation, filtering, randomising, programmatic API.

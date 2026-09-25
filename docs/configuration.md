@@ -47,44 +47,46 @@ they are exactly the kinds the `[files]` extra can synthesize.
 
 ## The loader table — what decodes how
 
-Decoding is a mapping `FileType -> (bytes -> object)`. The plugin never hard-depends on
-[`e-serde`](https://pypi.org/project/e-serde/): it is the default **when installed**, and
-the library degrades to the standard library otherwise. Anything neither covers stays raw
-`bytes` for you to handle.
+Decoding is a mapping `FileType -> (bytes -> object)`. The **default is the standard
+library** (`json` + `tomllib`) — zero extra dependencies.
+[`e-serde`](https://pypi.org/project/e-serde/) is an **optional `[serde]` extra** you
+*register* to make it the official, ultrarapid, multi-format loader. Anything neither covers
+stays raw `bytes` for you to handle.
 
-| Kind | `pytest-resources[serde]` (default) | stdlib only | 
+| Kind | default (stdlib) | `[serde]` extra (e-serde) |
 |---|---|---|
-| `JSON` | native `dict` / `list` | `json` |
-| `JSONC` | parsed (comments/trailing commas) | `bytes` |
-| `YAML` | native `dict` / `list` | `bytes` |
-| `TOML` | native `dict` | `tomllib` |
-| `INI` | native `dict` | `bytes` |
+| `JSON` | `json` | native `dict` / `list` |
+| `JSONC` | `bytes` | parsed (comments/trailing commas) |
+| `YAML` | `bytes` | native `dict` / `list` |
+| `TOML` | `tomllib` | native `dict` |
+| `INI` | `bytes` | native `dict` |
 | `NDJSON` | `list[dict]` (per line) | `list[dict]` (per line) |
 | `MARKDOWN`, `TEXT` | `str` | `str` |
 | `CSV`, `TSV`, `HTML`, `XML`, `PYTHON`, documents/images (`PDF`, `DOCX`, `XLSX`, `PNG`, …), `BINARY`, unknown | `bytes` | `bytes` |
 
-With e-serde installed the five config formats it supports (`JSON/JSONC/YAML/TOML/INI`) all
-decode natively; `NDJSON` is line-split JSON and `MARKDOWN`/`TEXT` are UTF-8 decoded.
-Without it, only `JSON`/`TOML`/`NDJSON`/`MARKDOWN`/`TEXT` decode and the rest stay `bytes`.
-`CSV`, `TSV`, `HTML`, `XML`, `PYTHON` and every document or image kind (`PDF`, `DOCX`,
-`XLSX`, `PNG`, …) are **never** decoded by default — they are `bytes` until you register
+By default only `JSON`/`TOML`/`NDJSON`/`MARKDOWN`/`TEXT` decode; the rest — including
+`JSONC`/`YAML`/`INI` — stay raw `bytes`. Install `[serde]` and register `eserde_loaders()`
+and the five config formats e-serde supports (`JSON/JSONC/YAML/TOML/INI`) all decode
+natively and fast. `CSV`, `TSV`, `HTML`, `XML`, `PYTHON` and every document or image kind
+(`PDF`, `DOCX`, `XLSX`, `PNG`, …) are **never** decoded — they are `bytes` until you register
 a loader (the honest, open-ended fallback). The document and image kinds exist so they
 are *typed* and so the `[files]` extra can synthesize them.
 
 ## Installing
 
 ```bash
-uv add --group test "pytest-resources[serde]"   # e-serde default codecs (recommended)
-uv add --group test pytest-resources            # stdlib-only, zero extra deps
+uv add --group test pytest-resources            # default: stdlib (json + tomllib), zero extra deps
+uv add --group test "pytest-resources[serde]"   # e-serde — fast, multi-format loader (recommended)
 uv add --group test "pytest-resources[objects]" # random objects from your models (polyfactory)
 uv add --group test "pytest-resources[files]"   # synthetic files, 25 formats (faker-file)
 uv add --group test "pytest-resources[random]"  # both synthesis backends
 ```
 
-`e-serde` is an optional `[serde]` extra, never a core dependency of the plugin. The
-synthesis extras gate `resources.make()` / `resources.batch()` (`[objects]`) and
-`resources.file()` (`[files]`); calling either without its extra raises
-`ExtraNotInstalledError` naming the exact install command.
+All three backends are optional extras, never core dependencies. Install `[serde]` and
+register `eserde_loaders()` to adopt e-serde as your loader; the synthesis extras gate
+`resources.make()` / `resources.batch()` (`[objects]`) and `resources.file()` (`[files]`).
+Calling either without its extra raises `ExtraNotInstalledError` naming the exact install
+command.
 
 ## Registering custom loaders
 
@@ -100,6 +102,17 @@ from pytest_resources import FileType
 
 def pytest_resource_loaders(register):
     register({FileType.CSV: lambda b: list(csv.DictReader(io.StringIO(b.decode())))})
+```
+
+To make e-serde the official loader, install `[serde]` and register its whole table in one
+call:
+
+```python
+from pytest_resources import eserde_loaders
+
+
+def pytest_resource_loaders(register):
+    register(eserde_loaders())
 ```
 
 A loader is any canonical `bytes -> object` callable. This is the seam that turns the
