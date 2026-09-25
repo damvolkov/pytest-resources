@@ -223,3 +223,6 @@ __marimo__/
 
 # Serena MCP
 .serena/
+
+# opencode project-local commands (local tooling, not part of the package)
+/.opencode/

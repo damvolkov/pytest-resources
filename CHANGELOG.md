@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `release.yml` now also creates/refreshes the GitHub Release on a `v*` tag push (job
+  `github`), so `git tag v* && git push --follow-tags` publishes to PyPI **and** GitHub in
+  one shot — no manual `gh release create`.
+
 ## [0.3.0] - 2026-09-25
 
 ### Changed
