@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-24
+
+### Changed
+
+- Documentation: the synthesis surface (`make` / `batch` / `file`) is covered end to end,
+  with a new async-testing section (pure-CPU `make`/`batch`, `awalk` over adopted files,
+  off-loop `to_thread` for the network-backed `mp3`); the format matrix notes the document
+  and image kinds. The coverage floor is raised from 90% to 95% (current: 100%).
+
+### Added
+
+- Tests for `TypedDict` model synthesis, the `batch` default size, the extra synthetic file
+  suffixes, and the synthesis provider's memoization.
+
+No behavioural change to the packaged wheel.
+
 ## [0.2.1] - 2026-09-24
 
 ### Fixed
@@ -63,7 +79,8 @@ First release.
 - A module-lifetime decode cache per tree, and typed misses (`EntryNotFoundError` /
   `KeyError`) that carry a `difflib` "did you mean" hint.
 
-[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.1...HEAD
+[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.2
 [0.2.1]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.1
 [0.2.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.0
 [0.1.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.1.0
