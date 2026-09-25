@@ -16,6 +16,16 @@ from pytest_resources import FileType
         (".cfg", FileType.INI),
         (".jsonl", FileType.NDJSON),
         (".md", FileType.MARKDOWN),
+        (".pdf", FileType.PDF),
+        (".docx", FileType.DOCX),
+        (".xlsx", FileType.XLSX),
+        (".jpg", FileType.JPEG),
+        (".jpeg", FileType.JPEG),
+        (".tif", FileType.TIFF),
+        (".tiff", FileType.TIFF),
+        (".webp", FileType.WEBP),
+        (".eml", FileType.EML),
+        (".zip", FileType.ZIP),
     ],
 )
 def test_filetype_of_known_suffix(suffix: str, expected: FileType) -> None:

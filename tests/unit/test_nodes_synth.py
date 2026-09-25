@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from pytest_resources import build_resources
+from pytest_resources.synth import SynthProvider
 
 if TYPE_CHECKING:
     from pytest_resources.nodes import Resources
@@ -48,6 +49,17 @@ def tree(tmp_path: Path) -> Resources:
 
 def test_synth_module_stays_unloaded_until_first_use(tree: Resources) -> None:
     assert tree._synth is None
+
+
+def test_synth_is_built_once_and_memoized(tree: Resources) -> None:
+    tree.make(int)
+    assert isinstance(tree._synth, SynthProvider)
+    assert tree._common_synth() is tree._synth
+
+
+def test_assigned_synth_is_not_rebuilt(tree: Resources) -> None:
+    tree._synth = stub = _StubProvider()
+    assert tree._common_synth() is stub
 
 
 def test_make_forwards_spec_seed_and_fields(tree: Resources) -> None:

@@ -8,7 +8,7 @@ same loader table as any authored resource.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import attrs
 import msgspec
@@ -45,6 +45,11 @@ class Book:
     pages: int
 
 
+class Row(TypedDict):
+    k: str
+    v: int
+
+
 @pytest.fixture
 def tree(tmp_path: Path) -> Resources:
     return pr.build_resources(tmp_path)
@@ -60,6 +65,18 @@ def test_make_builds_a_dataclass_instance(tree: Resources) -> None:
 @pytest.mark.parametrize("model", [User, Pet, Point, Book])
 def test_make_autodetects_every_model_family(tree: Resources, model: type[Any]) -> None:
     assert isinstance(tree.make(model), model)
+
+
+def test_make_builds_a_typeddict_model(tree: Resources) -> None:
+    row = tree.make(Row)
+    assert isinstance(row, dict)
+    assert set(row) == {"k", "v"}
+    assert isinstance(row["k"], str)
+    assert isinstance(row["v"], int)
+
+
+def test_batch_defaults_to_ten(tree: Resources) -> None:
+    assert len(tree.batch(User)) == 10
 
 
 def test_batch_returns_n_instances(tree: Resources) -> None:
