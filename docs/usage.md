@@ -135,6 +135,29 @@ backend (gTTS) needs network; pick another format for offline suites. Formats wi
 recipe (`SVG`, `YAML`, `TOML`, …) raise `ResourceError` listing what *is* synthesizable —
 the same happens for any unknown suffix, which never silently degrades to raw bytes.
 
+### In async tests
+
+Synthesis keeps the same contract as the rest of the package: `make()` and `batch()` are
+pure in-memory CPU — they never touch the loop — and the async navigation API
+(`abuild_resources`, `awalk`) works over adopted synthetic files exactly as over authored
+ones:
+
+```python
+async def test_pipeline(resources: pr.Resources):
+    events = resources.batch(Event, 20)  # pure CPU — safe on the loop
+    async for path in resources.awalk("*.pdf"):  # synthetic PDFs are indexed too
+        await parse(path)
+```
+
+`file()` performs one small synchronous write to the local temp storage. For the one
+network-backed format (MP3, gTTS), keep the loop free explicitly:
+
+```python
+import asyncio
+
+mp3 = await asyncio.to_thread(resources.file, "mp3")
+```
+
 ## Streaming a large tree (async)
 
 For big resource trees, build off the event loop and walk it lazily with the async

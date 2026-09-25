@@ -6,11 +6,20 @@ extensible to **any** canonical `bytes -> object` loader, and anything else hand
 raw `bytes`.
 
 You point it at one or more directories of sample files; it recursively indexes the tree
-without reading anything, and you reach, filter and randomise parsed values the way they
-read:
+without reading anything, and you reach, filter, randomise and synthesize parsed values
+the way they read:
 
 ```python
+from dataclasses import dataclass
+
 import pytest_resources as pr
+
+
+@dataclass
+class User:
+    name: str
+    age: int
+
 
 def test_profile(resources: pr.Resources):
     user = resources.structured.user          # sample dir -> dict (decoded, cached)
@@ -36,7 +45,10 @@ uv add --group test "pytest-resources[random]"  # both
 ```
 
 The `resources` fixture auto-loads via the `pytest11` entry point — no imports in your
-`conftest.py`.
+`conftest.py`. Everything (index, navigation, synthesis) is async-test friendly:
+`make`/`batch` are pure in-memory CPU and `abuild_resources`/`awalk` keep the loop free;
+calling a synthesis method without its extra raises `ExtraNotInstalledError` with the
+exact install command — the plugin never hard-depends on polyfactory or faker-file.
 
 ## What you get
 

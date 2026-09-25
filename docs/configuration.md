@@ -61,13 +61,15 @@ the library degrades to the standard library otherwise. Anything neither covers 
 | `INI` | native `dict` | `bytes` |
 | `NDJSON` | `list[dict]` (per line) | `list[dict]` (per line) |
 | `MARKDOWN`, `TEXT` | `str` | `str` |
-| `CSV`, `TSV`, `HTML`, `XML`, `PYTHON`, `BINARY`, unknown | `bytes` | `bytes` |
+| `CSV`, `TSV`, `HTML`, `XML`, `PYTHON`, documents/images (`PDF`, `DOCX`, `XLSX`, `PNG`, …), `BINARY`, unknown | `bytes` | `bytes` |
 
 With e-serde installed the five config formats it supports (`JSON/JSONC/YAML/TOML/INI`) all
 decode natively; `NDJSON` is line-split JSON and `MARKDOWN`/`TEXT` are UTF-8 decoded.
 Without it, only `JSON`/`TOML`/`NDJSON`/`MARKDOWN`/`TEXT` decode and the rest stay `bytes`.
-`CSV`, `TSV`, `HTML`, `XML` and `PYTHON` are **never** decoded by default — they are
-`bytes` until you register a loader (the honest, open-ended fallback).
+`CSV`, `TSV`, `HTML`, `XML`, `PYTHON` and every document or image kind (`PDF`, `DOCX`,
+`XLSX`, `PNG`, …) are **never** decoded by default — they are `bytes` until you register
+a loader (the honest, open-ended fallback). The document and image kinds exist so they
+are *typed* and so the `[files]` extra can synthesize them.
 
 ## Installing
 
