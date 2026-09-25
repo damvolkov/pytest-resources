@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-09-25
+
+### Fixed
+
+- `ExtraNotInstalledError` now emits a single **uv-only** install hint (dropped the
+  redundant `pip` line), matching the project's toolchain and the docs.
+
 ## [0.2.2] - 2026-09-24
 
 ### Changed
@@ -79,7 +86,8 @@ First release.
 - A module-lifetime decode cache per tree, and typed misses (`EntryNotFoundError` /
   `KeyError`) that carry a `difflib` "did you mean" hint.
 
-[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.2...HEAD
+[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.3
 [0.2.2]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.2
 [0.2.1]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.1
 [0.2.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.0
