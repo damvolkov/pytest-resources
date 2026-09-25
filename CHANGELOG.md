@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-25
+
+### Changed
+
+- **The default loader is now the Python standard library** (`json` + `tomllib`): the core
+  ships with zero third-party dependencies. e-serde is no longer auto-selected when present,
+  so `JSONC` / `YAML` / `INI` decode to raw `bytes` unless you opt in.
+- The `[serde]` extra is now an explicit opt-in on equal footing with `[objects]` /
+  `[files]`, documented as the recommended fast, multi-format official loader.
+
+### Added
+
+- `eserde_loaders()` (exported): the e-serde codec table. Register it from `conftest.py`
+  via `pytest_resource_loaders` to make e-serde the project's loader; it raises
+  `ExtraNotInstalledError` (naming the `[serde]` extra) when the extra is absent.
+
 ## [0.2.3] - 2026-09-25
 
 ### Fixed
@@ -86,7 +102,8 @@ First release.
 - A module-lifetime decode cache per tree, and typed misses (`EntryNotFoundError` /
   `KeyError`) that carry a `difflib` "did you mean" hint.
 
-[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.2.3...HEAD
+[unreleased]: https://github.com/damvolkov/pytest-resources/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.3.0
 [0.2.3]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.3
 [0.2.2]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.2
 [0.2.1]: https://github.com/damvolkov/pytest-resources/releases/tag/v0.2.1
