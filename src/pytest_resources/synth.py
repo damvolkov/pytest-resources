@@ -116,8 +116,7 @@ class SynthProvider:
             return
         msg = (
             f"`Resources.{method}()` requires the '{extra}' extra.\n"
-            f'Install it with:  uv add --group test "pytest-resources[{extra}]"   '
-            f'(pip: pip install "pytest-resources[{extra}]")\n'
+            f'Install it with:  uv add --group test "pytest-resources[{extra}]"\n'
             f"Underlying import failed: {module}"
         )
         raise ExtraNotInstalledError(msg)

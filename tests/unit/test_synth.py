@@ -39,7 +39,7 @@ def test_synth_file_without_files_explains_the_extra(monkeypatch: pytest.MonkeyP
         provider.file(FileType.PDF)
     msg = str(excinfo.value)
     assert "pytest-resources[files]" in msg
-    assert "pip install" in msg
+    assert "uv add" in msg
     assert "faker-file" in msg
     assert "file" in msg
 
